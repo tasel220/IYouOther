@@ -5,15 +5,28 @@ using UnityEngine;
 public class Player : MonoBehaviour
 {
     public Rigidbody rb;
+    public Collider myCollider;
+    public int deathCount = 0;
+
+    public static Player[] players = new Player[4];
     public int IIndex;
+
+
     public float impulse;
     public int sprintN = 3;
 
     static float freezeTime = 3f;
 
-    KeyCode up, down, left, right, sprint;
+    KeyCode up, down, left, right, sprint, joySprint;
     enum States { ready, active, frozen, dying, revival}
-    States currentState;
+    //직접 할당하지 말고 SwitchState 함수를 통해서만 바꿀 것
+    States currentState = States.active;
+    public static void Initiate()
+    {
+        foreach(Player p in players)
+            if(p != null)
+                p.SwitchState(States.active);
+    }
 
     Item.ItemType currentItem;
     public Item.ItemType CurrentItem
@@ -55,7 +68,7 @@ public class Player : MonoBehaviour
             return ((!sprinting && sprintN > 0) /*&& currentState == States.active*/);
         }
     }
-
+    
     private void Awake()
     {
         up = (IIndex == 0) ? KeyCode.W : KeyCode.I;
@@ -63,13 +76,23 @@ public class Player : MonoBehaviour
         left = (IIndex == 0) ? KeyCode.A : KeyCode.J;
         right = (IIndex == 0) ? KeyCode.D : KeyCode.L;
         sprint = (IIndex == 0) ? KeyCode.LeftShift : KeyCode.RightShift;
+        joySprint = (KeyCode) System.Enum.Parse(typeof(KeyCode), ("Joystick" + (IIndex+1) +"Button0"));
+        
         rb = GetComponent<Rigidbody>();
+        myCollider = GetComponent<Collider>();
+    }
+
+    private void Start()
+    {
+        players[IIndex] = this;
+
     }
 
     public float timeTillSprintCharge = 1;
     // Update is called once per frame
     void Update()
     {
+        if (currentState != States.active) return;
         Vector3 dir = Vector3.zero;
         if (Input.GetKey(up))
             dir.z = 1;
@@ -79,9 +102,11 @@ public class Player : MonoBehaviour
             dir.x = 1;
         else if (Input.GetKey(left))
             dir.x = -1;
+        dir.x += Input.GetAxis("Horizontal_" + IIndex);
+        dir.z += -Input.GetAxis("Vertical_" + IIndex);
 
         rb.AddForce(dir * impulse);
-        if(sprintable && Input.GetKey(sprint))
+        if(sprintable && (Input.GetKey(sprint) || Input.GetKey(joySprint)))
         {
             StartCoroutine(Sprint(dir));
         }
@@ -105,7 +130,7 @@ public class Player : MonoBehaviour
         timeTillSprintCharge = sprintN == 0 ? 3f : 1f;
         rb.velocity = dir *  sprintImpulse;
         yield return new WaitForSeconds(sprintTime);
-        rb.velocity = dir * 0.2f;
+        rb.velocity = dir * 1f;
         sprinting = false;
     }
 
@@ -115,21 +140,47 @@ public class Player : MonoBehaviour
         var other = collision.gameObject.GetComponent<Player>();
         if(CurrentItem == Item.ItemType.ice)
             StartCoroutine(other.Freeze());
-        else
-            other.Burst();
+        else if(CurrentItem == Item.ItemType.spike)
+            StartCoroutine(other.Death());
         CurrentItem = Item.ItemType.none;
     }
 
     public IEnumerator Freeze()
     {
-        rb.isKinematic = true;
-        currentState = States.frozen;
+        SwitchState(States.frozen);
         yield return new WaitForSeconds(freezeTime);
-        currentState = States.active;
-        rb.isKinematic = false;
+        SwitchState(States.active);
     }
-    public void Burst()
+    public IEnumerator Death()
     {
-        Destroy(gameObject);
+        SwitchState(States.dying);
+        yield return new WaitForSeconds(1f);
+        gameObject.SetActive(true);
+        SwitchState(States.active);
+        transform.position = BattleManager.inst.SpawnPoint[Random.Range(0, BattleManager.playerN - 1)].transform.position;
+        yield return new WaitForSeconds(1f);
+        gameObject.layer = chrLayer;
+    }
+
+    int ghostLayer = 9;
+    int chrLayer = 8;
+    private void SwitchState(States newState)
+    {
+        switch(newState)
+        {
+            case States.dying:
+                rb.velocity = Vector3.zero;
+                deathCount++;
+                gameObject.SetActive(false);
+                gameObject.layer = ghostLayer;
+                break;
+            case States.frozen:
+                rb.isKinematic = true;
+                break;
+            case States.active:
+                rb.isKinematic = false;
+                break;
+        }
+        currentState = newState;
     }
 }
