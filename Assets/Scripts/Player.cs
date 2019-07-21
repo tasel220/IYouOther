@@ -138,6 +138,8 @@ public class Player : MonoBehaviour
     {
         if (!sprinting) return;
         var other = collision.gameObject.GetComponent<Player>();
+        if (other == null) return;
+        other.rb.AddExplosionForce(1000, collision.contacts[0].point, 0.4f);
         if(CurrentItem == Item.ItemType.ice)
             StartCoroutine(other.Freeze());
         else if(CurrentItem == Item.ItemType.spike)
