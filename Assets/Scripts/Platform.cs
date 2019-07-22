@@ -5,6 +5,7 @@ using UnityEngine;
 public class Platform : MonoBehaviour
 {
     Vector3 originalPos;
+    public bool submerged = false;
 
     private void Awake()
     {
@@ -21,8 +22,10 @@ public class Platform : MonoBehaviour
     IEnumerator Drown()
     {
         transform.position = originalPos + Vector3.down * 100;
+        submerged = true;
         yield return new WaitForSeconds(5f);
         transform.position = originalPos;
+        submerged = false;
     }
     
     private void Warn()

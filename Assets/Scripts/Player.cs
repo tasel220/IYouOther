@@ -10,17 +10,17 @@ public class Player : MonoBehaviour
 
     public static Player[] players = new Player[4];
     public int IIndex;
-
-
     public float impulse;
     public int sprintN = 3;
 
     static float freezeTime = 3f;
 
     KeyCode up, down, left, right, sprint, joySprint;
-    enum States { ready, active, frozen, dying, revival}
+    enum States { ready, active, frozen, dying, revival, finish}
     //직접 할당하지 말고 SwitchState 함수를 통해서만 바꿀 것
+    [SerializeField]
     States currentState = States.active;
+
     public static void Initiate()
     {
         foreach(Player p in players)
@@ -28,6 +28,14 @@ public class Player : MonoBehaviour
                 p.SwitchState(States.active);
     }
 
+    public static void Finish()
+    {
+        foreach (Player p in players)
+            if (p != null)
+                p.SwitchState(States.finish);
+    }
+
+    //currentItem 변수 직접 건들지 말고 프로퍼티 통해서만 할당할 것
     Item.ItemType currentItem;
     public Item.ItemType CurrentItem
     {
@@ -92,6 +100,13 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (currentState != States.dying)
+        {
+            if (transform.position.y < 0.5f)
+            {
+                BattleManager.inst.KillPlayer(this);
+            }
+        }
         if (currentState != States.active) return;
         Vector3 dir = Vector3.zero;
         if (Input.GetKey(up))
@@ -106,7 +121,7 @@ public class Player : MonoBehaviour
         dir.z += -Input.GetAxis("Vertical_" + IIndex);
 
         rb.AddForce(dir * impulse);
-        if(sprintable && (Input.GetKey(sprint) || Input.GetKey(joySprint)))
+        if(sprintable && (Input.GetKeyDown(sprint) || Input.GetKeyDown(joySprint)))
         {
             StartCoroutine(Sprint(dir));
         }
@@ -155,11 +170,13 @@ public class Player : MonoBehaviour
     }
     public IEnumerator Death()
     {
+        Debug.Log("death");
         SwitchState(States.dying);
         yield return new WaitForSeconds(1f);
+        transform.position = BattleManager.inst.SpawnPoint[Random.Range(0, BattleManager.playerN)].transform.position;
+        Debug.Log("revive");
         gameObject.SetActive(true);
         SwitchState(States.active);
-        transform.position = BattleManager.inst.SpawnPoint[Random.Range(0, BattleManager.playerN - 1)].transform.position;
         yield return new WaitForSeconds(1f);
         gameObject.layer = chrLayer;
     }
@@ -172,6 +189,9 @@ public class Player : MonoBehaviour
         {
             case States.dying:
                 rb.velocity = Vector3.zero;
+                CurrentItem = Item.ItemType.none;
+                sprintN = 3;
+                timeTillSprintCharge = 1;
                 deathCount++;
                 gameObject.SetActive(false);
                 gameObject.layer = ghostLayer;

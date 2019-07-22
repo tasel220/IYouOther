@@ -17,20 +17,23 @@ public class BattleManager : MonoBehaviour
         //AssignYou();
         //for (int i = 0; i < playerN; i++) Debug.Log(YouArray[i]);
         StartCoroutine(BattlePeriod());
-        Debug.Log(Input.GetJoystickNames()[0]);
+        //Debug.Log(Input.GetJoystickNames()[0]);
     }
 
-    private void Update()
+    private void Start()
     {
-        //Debug.Log(Input.GetAxis("Horizontal_0" + ", " + "Vertical_0"));
+        
     }
 
     public static int playerN = 4;
-    public int[] YouArray = new int[playerN];
+    public int[] IArray = new int[playerN];
     bool[] used = new bool[playerN];
-    private void AssignYou()
+    private void AssignI()
     {
         for (int i = 0; i < playerN; i++) used[i] = false;
+        int first = Random.Range(1, playerN);
+        used[first] = true;
+        IArray[0] = first;
         rec(0);
     }
 
@@ -41,40 +44,90 @@ public class BattleManager : MonoBehaviour
             if (!used[i] && i != ind)
             {
                 used[i] = true;
-                YouArray[ind] = i;
+                IArray[ind] = i;
                 if (ind + 1 < playerN) rec(ind + 1);
                 used[i] = false;
             }
         }
     }
-   
 
     IEnumerator BattlePeriod()
     {
-        yield return new WaitForSeconds(5f);
         Player.Initiate();
         yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
-        yield return new WaitForSeconds(5f);
+
+        for(int quarter = 1; quarter <= 4; quarter++)
+        {
+            yield return new WaitForSeconds(5f);
+            SpawnItems(quarter < 4 ? 2 : 1);
+            yield return new WaitForSeconds(5f);
+            PlatformHazard(quarter != 4 ? quarter : 3);
+            yield return new WaitForSeconds(5f);
+        }
+        Player.Finish();
+        yield return new WaitForSeconds(0.5f);
+        Finish();
     }
 
-    private void SpawnItem()
+    void Finish()
     {
-        var pos = SpawnPoint[Random.Range(0, 3)].transform.position;
-        Instantiate(Item[Random.Range(0, 1)], pos, Quaternion.identity);
+        Record.inst.RecordResults();
+        StopAllCoroutines();
+        SceneMgr.Result();
+    }
+
+    private void SpawnItems(int num)
+    {
+        if(num ==1)
+        {
+            for(int i = 0; ; i++)
+            {
+                if(!(Platforms[i].submerged))
+                {
+                    Instantiate(Item[Random.Range(0, 2)], SpawnPoint[i].transform.position, Quaternion.identity);
+                    return;
+                }
+            }
+        }
+
+        List<Platform> remainingPlatforms = new List<Platform>();
+        for (int i = 0;  i< 4; i++)
+        {
+            if (!(Platforms[i].submerged))
+            {
+                remainingPlatforms.Add(Platforms[i]);
+            }
+        }
+        if (remainingPlatforms.Count == 3) remainingPlatforms.Remove(remainingPlatforms[Random.Range(0, 3)]);
+        var pos1 = remainingPlatforms[0].transform.GetChild(1).position;
+        var pos2 = remainingPlatforms[1].transform.GetChild(1).position;
+        Instantiate(Item[1], pos1, Quaternion.identity);
+        Instantiate(Item[0], pos2, Quaternion.identity);
     }
 
     private void PlatformHazard(int num)
     {
-        StartCoroutine(Platforms[Random.Range(0, Platforms.Length - 1)].Hazard());
+        var ints = SelectRandomNumbers(3, num);
+        for(int i = 0; i < ints.Length; i++)
+            StartCoroutine(Platforms[ints[i]].Hazard());
+    }
+
+    public static int[] SelectRandomNumbers(int max, int num)
+    {
+        int[] x = new int[num];
+        int point = 0;
+        x[0] = Random.Range(0, point);
+        for (int i = 0; i < num; i++)
+        {
+            point = Random.Range(point, max + i + 2 - num);
+            x[i] = point;
+            point++;
+        }
+        return x;
+    }
+
+    public void KillPlayer(Player p)
+    {
+        StartCoroutine(p.Death());
     }
 }

@@ -4,21 +4,24 @@ using UnityEngine;
 
 public class Record : MonoBehaviour
 {
+    public static Record inst;
     private void Awake()
     {
+        inst = this;
         DontDestroyOnLoad(gameObject);
     }
 
     public void RecordResults()
     {
-        YouArray = BattleManager.inst.YouArray;
+        IArray = BattleManager.inst.IArray;
         for(int i = 0; i < 4; i++)
         {
+            if(Player.players[i] != null)
             DeathCounts[i] = Player.players[i].deathCount;
         }
     }
 
-    int[] YouArray;
-    int[] DeathCounts = new int[4];
+    public int[] IArray;
+    public int[] DeathCounts = new int[4];
 
 }
