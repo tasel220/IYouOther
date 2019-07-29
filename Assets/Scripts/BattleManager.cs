@@ -20,11 +20,6 @@ public class BattleManager : MonoBehaviour
         //Debug.Log(Input.GetJoystickNames()[0]);
     }
 
-    private void Start()
-    {
-        
-    }
-
     public static int playerN = 4;
     public int[] IArray = new int[playerN];
     bool[] used = new bool[playerN];
@@ -115,15 +110,28 @@ public class BattleManager : MonoBehaviour
     public static int[] SelectRandomNumbers(int max, int num)
     {
         int[] x = new int[num];
-        int point = 0;
-        x[0] = Random.Range(0, point);
+        int lastPoint = 0;
+        x[0] = Random.Range(0, lastPoint);
         for (int i = 0; i < num; i++)
         {
-            point = Random.Range(point, max + i + 2 - num);
-            x[i] = point;
-            point++;
+            lastPoint = Random.Range(lastPoint, max + i + 2 - num);
+            x[i] = lastPoint;
+            lastPoint++;
         }
         return x;
+    }
+
+    public Vector3 RandomSafeSpawnPoint()
+    {
+        List<Platform> remainingPlatforms = new List<Platform>();
+        for (int i = 0; i < 4; i++)
+        {
+            if (!(Platforms[i].submerged))
+            {
+                remainingPlatforms.Add(Platforms[i]);
+            }
+        }
+        return remainingPlatforms[Random.Range(0, remainingPlatforms.Count)].SpawnPoint;
     }
 
     public void KillPlayer(Player p)

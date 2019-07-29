@@ -5,31 +5,59 @@ using UnityEngine;
 public class Platform : MonoBehaviour
 {
     Vector3 originalPos;
+    Animator animator;
+    [HideInInspector]
+    public Vector3 SpawnPoint;
+    public Material mat;
     public bool submerged = false;
 
     private void Awake()
     {
+        mat.color = Color.white;
         originalPos = transform.position;
+        SpawnPoint = transform.GetChild(1).transform.position;
+        animator = GetComponent<Animator>();
     }
 
     public IEnumerator Hazard()
     {
-        Warn();
+        StartCoroutine(Warn());
         yield return new WaitForSeconds(5f);
         StartCoroutine(Drown());
     }
 
     IEnumerator Drown()
     {
-        transform.position = originalPos + Vector3.down * 100;
+        animator.SetTrigger("Fall");
         submerged = true;
         yield return new WaitForSeconds(5f);
-        transform.position = originalPos;
         submerged = false;
     }
     
-    private void Warn()
+    private IEnumerator Warn()
     {
-
+        mat.color = Color.red;
+        yield return new WaitForSeconds(1f);
+        mat.color = Color.white;
+        yield return new WaitForSeconds(0.5f);
+        mat.color = Color.red;
+        yield return new WaitForSeconds(1f);
+        mat.color = Color.white;
+        yield return new WaitForSeconds(0.5f);
+        //3
+        mat.color = Color.red;
+        yield return new WaitForSeconds(0.5f);
+        mat.color = Color.white;
+        yield return new WaitForSeconds(0.5f);
+        mat.color = Color.red;
+        yield return new WaitForSeconds(0.25f);
+        mat.color = Color.white;
+        yield return new WaitForSeconds(0.25f);
+        mat.color = Color.red;
+        yield return new WaitForSeconds(0.25f);
+        mat.color = Color.white;
+        yield return new WaitForSeconds(0.25f);
+        mat.color = Color.white;
+        Debug.Log("경고 끝");
     }
 }
