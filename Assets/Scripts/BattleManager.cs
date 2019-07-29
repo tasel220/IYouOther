@@ -11,39 +11,40 @@ public class BattleManager : MonoBehaviour
     public GameObject[] Item = new GameObject[2];
     public GameObject[] SpawnPoint = new GameObject[4];
 
+    public int numOfPlayers;
+
     private void Awake()
     {
         inst = this;
-        //AssignYou();
-        //for (int i = 0; i < playerN; i++) Debug.Log(YouArray[i]);
+        IArray = new int[playerN];
+        AssignI();
         StartCoroutine(BattlePeriod());
-        //Debug.Log(Input.GetJoystickNames()[0]);
     }
 
     public static int playerN = 4;
-    public int[] IArray = new int[playerN];
-    bool[] used = new bool[playerN];
+    public int[] IArray;
+
     private void AssignI()
     {
-        for (int i = 0; i < playerN; i++) used[i] = false;
-        int first = Random.Range(1, playerN);
-        used[first] = true;
-        IArray[0] = first;
-        rec(0);
-    }
+        bool[] filled = new bool[playerN];
+        for (int i = 0; i < playerN; i++) filled[i] = false;
 
-    void rec(int ind)
-    {
-        for (int i = 0; i < playerN; i++)
+        for (int value = 0; value < playerN - 1; value++)
         {
-            if (!used[i] && i != ind)
-            {
-                used[i] = true;
-                IArray[ind] = i;
-                if (ind + 1 < playerN) rec(ind + 1);
-                used[i] = false;
-            }
+            int remainingN = playerN - 1;
+            for (int i = 0; i < playerN; i++) if (i == value || filled[i]) remainingN--;
+            int x = Random.Range(0, remainingN);
+            for (int i = 0; i < remainingN; i++) if (i == value || filled[i]) x++;
+            IArray[x] = value;
+            filled[x] = true;
         }
+        if(!filled[playerN - 1])
+        {
+            int index = Random.Range(0, playerN - 1);
+            IArray[playerN - 1] = IArray[index];
+            IArray[index] = playerN - 1;
+        }
+
     }
 
     IEnumerator BattlePeriod()
