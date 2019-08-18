@@ -15,6 +15,7 @@ public class BattleManager : MonoBehaviour
 
     private void Awake()
     {
+        playerN = numOfPlayers;
         inst = this;
         IArray = new int[playerN];
         AssignI();
@@ -87,7 +88,7 @@ public class BattleManager : MonoBehaviour
         }
 
         List<Platform> remainingPlatforms = new List<Platform>();
-        for (int i = 0;  i< 4; i++)
+        for (int i = 0;  i< playerN; i++)
         {
             if (!(Platforms[i].submerged))
             {

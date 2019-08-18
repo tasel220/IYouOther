@@ -1204,7 +1204,7 @@ MonoBehaviour:
   - {fileID: 918419390}
   - {fileID: 147286481}
   - {fileID: 918388415}
-  numOfPlayers: 0
+  numOfPlayers: 4
   IArray: 00000000000000000000000000000000
 --- !u!4 &1039344804
 Transform:
